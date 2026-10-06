@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Двери знаний</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+    background: linear-gradient(135deg, #ffe9a8 0%, #ffd1dc 50%, #c9e4ff 100%);
+    min-height: 100vh;
+    padding: 15px;
+    color: #3a2a5a;
+  }
+  h1 {
+    text-align: center;
+    font-size: 2.2rem;
+    color: #6a2c91;
+    text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(0,0,0,0.1);
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 15px;
+  }
+  .counter {
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    background: #fff;
+    padding: 8px 20px;
+    border-radius: 20px;
+    display: inline-block;
+    margin: 0 auto 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    color: #d63384;
+  }
+  .counter-wrap { text-align: center; }
+
+  /* ========== КНОПКА НАЧАТЬ ЗАНОВО ========== */
+  .restart-btn {
+    display: block;
+    margin: 15px auto;
+    padding: 14px 32px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    font-family: inherit;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Красное состояние (начальное) */
+  .restart-btn.red {
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    color: white;
+    box-shadow: 0 5px 15px rgba(255,0,0,0.4), 0 0 20px rgba(255,0,0,0.3);
+    animation: redPulse 2s infinite;
+  }
+
+  @keyframes redPulse {
+    0%, 100% {
+      box-shadow: 0 5px 15px rgba(255,0,0,0.4), 0 0 20px rgba(255,0,0,0.3);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 5px 20px rgba(255,0,0,0.6), 0 0 30px rgba(255,0,0,0.5);
+      transform: scale(1.02);
+    }
+  }
+
+  /* Зелёное состояние (после победы) */
+  .restart-btn.green {
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    box-shadow: 0 5px 15px rgba(76,175,80,0.4), 0 0 30px rgba(76,175,80,0.6);
+    animation: greenGlow 1.5s infinite;
+    cursor: pointer;
+  }
+
+  @keyframes greenGlow {
+    0%, 100% {
+      box-shadow: 0 5px 15px rgba(76,175,80,0.4), 0 0 30px rgba(76,175,80,0.6), 0 0 50px rgba(76,175,80,0.4);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 5px 25px rgba(76,175,80,0.7), 0 0 50px rgba(76,175,80,0.8), 0 0 70px rgba(76,175,80,0.5);
+      transform: scale(1.05);
+    }
+  }
+
+  .restart-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .restart-btn:active {
+    transform: translateY(2px);
+  }
+
+  .hint {
+    text-align: center;
+    background: rgba(255,255,255,0.7);
+    padding: 10px;
+    border-radius: 10px;
+    margin: 10px 0 15px;
+    font-size: 1rem;
+    color: #555;
+  }
+
+  /* ========== КОМНАТА ========== */
+  .room {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    height: 460px;
+    margin: 0 auto 20px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 0 50px rgba(0,0,0,0.2);
+    background: #d4b896;
+  }
+
+  /* Задняя стена с обоями */
+  .back-wall {
+    position: absolute;
+    top: 0;
+    left: 15%;
+    right: 15%;
+    height: 65%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 40px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 40px),
+      linear-gradient(135deg, #f5e6c8 0%, #e8d4a8 100%);
+    border-bottom: 4px solid #8b6f47;
+    box-shadow: inset 0 -10px 20px rgba(0,0,0,0.1);
+  }
+
+  /* Боковые стены (перспектива) */
+  .left-wall {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 15%;
+    height: 100%;
+    background: linear-gradient(to right, #b8986a 0%, #d4b896 100%);
+    clip-path: polygon(0 0, 100% 15%, 100% 85%, 0 100%);
+    box-shadow: inset -5px 0 15px rgba(0,0,0,0.3);
+  }
+  .right-wall {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 15%;
+    height: 100%;
+    background: linear-gradient(to left, #b8986a 0%, #d4b896 100%);
+    clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 85%);
+    box-shadow: inset 5px 0 15px rgba(0,0,0,0.3);
+  }
+
+  /* Пол */
+  .floor {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 35%;
+    background:
+      repeating-linear-gradient(90deg,
+        #8b5a2b 0px, #8b5a2b 2px,
+        #a0693a 2px, #a0693a 60px,
+        #8b5a2b 60px, #8b5a2b 62px,
+        #965f33 62px, #965f33 120px),
+      linear-gradient(to bottom, #8b5a2b, #6b4423);
+    box-shadow: inset 0 10px 20px rgba(0,0,0,0.3);
+  }
+
+  /* Ковёр */
+  .carpet {
+    position: absolute;
+    bottom: 5%;
+    left: 25%;
+    width: 50%;
+    height: 25%;
+    background:
+      radial-gradient(ellipse at center, #c94f4f 0%, #8b2e2e 70%, #5a1a1a 100%);
+    border-radius: 50%;
+    border: 4px solid #ffd700;
+    box-shadow:
+      inset 0 0 20px rgba(0,0,0,0.4),
+      0 5px 15px rgba(0,0,0,0.3);
+    transform: perspective(300px) rotateX(60deg);
+  }
+  .carpet::before {
+    content: '';
+    position: absolute;
+    inset: 15%;
+    border: 3px dashed #ffd700;
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+
+  /* Окно */
+  .window {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 90px;
+    background: linear-gradient(to bottom, #87ceeb 0%, #b0e0e6 60%, #fff8dc 100%);
+    border: 6px solid #6b4423;
+    border-radius: 5px;
+    box-shadow:
+      inset 0 0 10px rgba(255,255,255,0.5),
+      0 3px 8px rgba(0,0,0,0.3);
+  }
+  .window::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 100%;
+    background: #6b4423;
+  }
+  .window::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 4px;
+    background: #6b4423;
+  }
+  .sun {
+    position: absolute;
+    top: 15%;
+    right: 20%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #fff700 0%, #ffa500 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 15px #ffd700;
+  }
+
+  /* Полки */
+  .shelf {
+    position: absolute;
+    height: 8px;
+    background: linear-gradient(to bottom, #8b5a2b, #5a3a1b);
+    box-shadow: 0 3px 5px rgba(0,0,0,0.4);
+    border-radius: 2px;
+  }
+  .shelf-top {
+    top: 28%;
+    left: 20%;
+    width: 25%;
+  }
+  .shelf-top-2 {
+    top: 28%;
+    right: 20%;
+    width: 25%;
+  }
+  .shelf-bottom {
+    top: 50%;
+    left: 20%;
+    width: 60%;
+  }
+
+  /* Сундук */
+  .chest {
+    position: absolute;
+    bottom: 28%;
+    right: 20%;
+    width: 80px;
+    height: 50px;
+    background: linear-gradient(to bottom, #8b4513, #5a2d0c);
+    border: 3px solid #3e2817;
+    border-radius: 5px 5px 3px 3px;
+    box-shadow: inset 0 -5px 10px rgba(0,0,0,0.3), 0 3px 5px rgba(0,0,0,0.4);
+  }
+  .chest::before {
+    content: '';
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 15px;
+    height: 15px;
+    background: gold;
+    border-radius: 3px;
+    border: 2px solid #8b6508;
+  }
+  .chest::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, #a0522d, #8b4513);
+    border-radius: 5px 5px 0 0;
+    border-bottom: 2px solid #3e2817;
+  }
+
+  /* Лампа */
+  .lamp {
+    position: absolute;
+    top: 5%;
+    left: 25%;
+    width: 30px;
+    height: 40px;
+  }
+  .lamp-shade {
+    width: 30px;
+    height: 20px;
+    background: linear-gradient(to bottom, #ff6b6b, #c92a2a);
+    clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+  }
+  .lamp-cord {
+    width: 2px;
+    height: 20px;
+    background: #333;
+    margin: 0 auto;
+  }
+
+  /* Картина */
+  .picture {
+    position: absolute;
+    top: 10%;
+    right: 22%;
+    width: 60px;
+    height: 45px;
+    background: linear-gradient(135deg, #87ceeb 0%, #98d982 50%, #f4e04d 100%);
+    border: 5px solid #8b4513;
+    border-radius: 2px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+  }
+  .picture::before {
+    content: '🌄';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  /* ========== ПРЕДМЕТЫ ========== */
+  .item {
+    position: absolute;
+    font-size: 1.8rem;
+    cursor: default;
+    transition: transform 0.2s;
+    filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.4));
+    z-index: 5;
+  }
+  .item.small { font-size: 1.3rem; }
+  .item.large { font-size: 2.3rem; }
+
+  .key {
+    cursor: pointer;
+    animation: keyGlow 2s infinite alternate;
+    z-index: 10;
+  }
+  .key:hover {
+    transform: scale(1.4) rotate(15deg);
+    animation-play-state: paused;
+    filter: drop-shadow(0 0 10px gold) drop-shadow(2px 3px 3px rgba(0,0,0,0.4));
+  }
+  @keyframes keyGlow {
+    from { filter: drop-shadow(0 0 3px gold) drop-shadow(2px 3px 3px rgba(0,0,0,0.4)); }
+    to { filter: drop-shadow(0 0 10px gold) drop-shadow(2px 3px 3px rgba(0,0,0,0.4)); }
+  }
+  .key.found {
+    animation: keyFly 0.8s forwards;
+  }
+  @keyframes keyFly {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5) rotate(360deg); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  /* ========== ДВЕРИ ========== */
+  .doors-area {
+    background: linear-gradient(to bottom, #8b6f47 0%, #6b4423 100%);
+    border: 5px solid #3e2817;
+    border-radius: 20px;
+    padding: 20px 10px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .door {
+    background: linear-gradient(to bottom, #d2691e, #8b4513);
+    border: 3px solid #3e2817;
+    border-radius: 10px 10px 5px 5px;
+    height: 180px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+  }
+  .door::before {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    right: 10%;
+    bottom: 10%;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 5px;
+  }
+  .door-number {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    color: #3e2817;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+    border: 2px solid #3e2817;
+  }
+  .lock {
+    position: absolute;
+    right: 15%;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    background: gold;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #8b6508;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  .door.key-inserted .lock {
+    background: #4caf50;
+    animation: lockPulse 1s infinite;
+  }
+  @keyframes lockPulse {
+    0%, 100% { box-shadow: 0 0 5px #4caf50; }
+    50% { box-shadow: 0 0 20px #4caf50; }
+  }
+  .door.error { animation: doorShake 0.5s; }
+  .door.error::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,0,0,0.5);
+    border-radius: 8px;
+    animation: redFlash 1s;
+  }
+  @keyframes doorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  @keyframes redFlash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .door.opened {
+    background: linear-gradient(to right, #fff9c4 0%, #fff 50%, #fff9c4 100%);
+    cursor: default;
+    box-shadow: 0 0 30px gold, inset 0 0 20px rgba(255,215,0,0.5);
+    animation: doorOpen 1s forwards;
+  }
+  @keyframes doorOpen {
+    0% { transform: perspective(500px) rotateY(0); }
+    100% { transform: perspective(500px) rotateY(-70deg); transform-origin: left; }
+  }
+  .door.opened .lock,
+  .door.opened .door-number { display: none; }
+  .door.opened::before { display: none; }
+  .light-rays {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,255,200,0.9) 0%, transparent 70%);
+    border-radius: 8px;
+    animation: lightPulse 2s infinite alternate;
+  }
+  @keyframes lightPulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+  .fact-preview {
+    position: absolute;
+    bottom: 10px;
+    left: 5px;
+    right: 5px;
+    background: rgba(255,255,255,0.9);
+    padding: 4px;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    color: #333;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* ========== МОДАЛКИ ========== */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal.active { display: flex; }
+  .modal-content {
+    background: linear-gradient(135deg, #fff9c4, #ffe082);
+    border: 5px solid gold;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 50px gold;
+    animation: modalPop 0.5s;
+  }
+  @keyframes modalPop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  .modal-content h2 {
+    color: #d63384;
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+  }
+  .modal-content p {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .modal-content button {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1.2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #2e7d32;
+    transition: all 0.2s;
+  }
+  .modal-content button:hover { transform: translateY(-2px); }
+  .modal-content button:active { transform: translateY(2px); box-shadow: 0 2px 0 #2e7d32; }
+
+  .final-modal .modal-content {
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4, #a1c4fd, #c2e9fb);
+    border-color: #fff;
+  }
+  .final-modal h2 { font-size: 2.5rem; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+
+  @media (max-width: 700px) {
+    .doors-area { grid-template-columns: repeat(4, 1fr); }
+    .door { height: 140px; }
+    h1 { font-size: 1.5rem; }
+    .room { height: 380px; }
+    .item { font-size: 1.4rem; }
+    .item.small { font-size: 1rem; }
+    .item.large { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🗝️ Двери знаний 🚪</h1>
+<div class="subtitle">Найди все ключи в комнате и открой все двери!</div>
+<div class="counter-wrap">
+  <div class="counter">Открыто дверей: <span id="openedCount">0</span> / 7</div>
+</div>
+
+<!-- КНОПКА НАЧАТЬ ЗАНОВО -->
+<button class="restart-btn red" id="restartBtn" onclick="restartGame()">🔄 Начать заново</button>
+
+<div class="hint">💡 Ищи золотые ключики среди предметов в комнате. Нажми на ключ, потом — на свою дверь!</div>
+
+<!-- КОМНАТА -->
+<div class="room" id="room">
+  <!-- Стены -->
+  <div class="back-wall"></div>
+  <div class="left-wall"></div>
+  <div class="right-wall"></div>
+
+  <!-- Окно -->
+  <div class="window">
+    <div class="sun"></div>
+  </div>
+
+  <!-- Картина -->
+  <div class="picture"></div>
+
+  <!-- Лампа -->
+  <div class="lamp">
+    <div class="lamp-cord"></div>
+    <div class="lamp-shade"></div>
+  </div>
+
+  <!-- Полки -->
+  <div class="shelf shelf-top"></div>
+  <div class="shelf shelf-top-2"></div>
+  <div class="shelf shelf-bottom"></div>
+
+  <!-- Сундук -->
+  <div class="chest"></div>
+
+  <!-- Пол -->
+  <div class="floor"></div>
+  <div class="carpet"></div>
+
+  <!-- Предметы будут добавлены через JS -->
+</div>
+
+<div class="doors-area" id="doorsArea"></div>
+
+<div class="modal" id="factModal">
+  <div class="modal-content">
+    <h2 id="factTitle">✨ Научный факт! ✨</h2>
+    <p id="factText"></p>
+    <button onclick="closeFactModal()">Ура! Понятно!</button>
+  </div>
+</div>
+
+<div class="modal final-modal" id="finalModal">
+  <div class="modal-content">
+    <h2>🎉 ПОБЕДА! 🎉</h2>
+    <p>Ты открыл все 7 дверей и узнал много интересных научных фактов! Ты настоящий исследователь!</p>
+    <button onclick="restartGame()">Играть снова</button>
+  </div>
+</div>
+
+<script>
+  const facts = [
+    { title: "🐙 Осьминог", text: "У осьминога целых ТРИ сердца! Два качают кровь к жабрам, а одно — по всему телу." },
+    { title: "🍯 Мёд", text: "Мёд никогда не портится! Археологи нашли мёд в египетских гробницах возрастом 3000 лет — и он всё ещё был съедобен!" },
+    { title: "⚡ Молния", text: "Молния в 5 раз горячее поверхности Солнца! Её температура достигает 30 000 градусов." },
+    { title: "🐌 Улитка", text: "Улитка может спать целых 3 года! Если погода слишком сухая, она прячется в раковину и засыпает." },
+    { title: "🐋 Кит", text: "Сердце синего кита такое огромное, что в его артериях мог бы плавать маленький ребёнок!" },
+    { title: "🪐 Юпитер", text: "На Юпитере идут алмазные дожди! Углерод в атмосфере превращается в настоящие бриллианты." },
+    { title: "🍌 Банан", text: "Бананы на 50% совпадают по ДНК с людьми! Мы все немного бананы 🍌" }
+  ];
+
+  // Предметы с координатами (в % от комнаты)
+  const roomItems = [
+    // На верхней левой полке (y ~ 25%, x 20-45%)
+    { emoji: '📚', x: 22, y: 20, size: 'large' },
+    { emoji: '📖', x: 28, y: 21 },
+    { emoji: '🕰️', x: 34, y: 19, size: 'large' },
+    { emoji: '🏺', x: 40, y: 20 },
+
+    // На верхней правой полке (y ~ 25%, x 55-80%)
+    { emoji: '🪴', x: 58, y: 20, size: 'large' },
+    { emoji: '📚', x: 65, y: 21 },
+    { emoji: '🎭', x: 72, y: 20 },
+    { emoji: '🖼️', x: 78, y: 21 },
+
+    // На нижней полке (y ~ 47%, x 20-80%)
+    { emoji: '🧸', x: 22, y: 42, size: 'large' },
+    { emoji: '🎨', x: 28, y: 43 },
+    { emoji: '📚', x: 34, y: 42 },
+    { emoji: '🪁', x: 40, y: 43 },
+    { emoji: '🎸', x: 46, y: 42, size: 'large' },
+    { emoji: '🧩', x: 53, y: 43 },
+    { emoji: '🪀', x: 59, y: 42 },
+    { emoji: '🎯', x: 65, y: 43 },
+    { emoji: '🪄', x: 71, y: 42 },
+    { emoji: '📚', x: 77, y: 43 },
+
+    // На ковре (y ~ 75-90%, x 25-75%)
+    { emoji: '⚽', x: 30, y: 80, size: 'large' },
+    { emoji: '🚗', x: 38, y: 85 },
+    { emoji: '🎲', x: 45, y: 82 },
+    { emoji: '🧩', x: 52, y: 87 },
+    { emoji: '🎈', x: 60, y: 80, size: 'large' },
+    { emoji: '🪀', x: 68, y: 85 },
+    { emoji: '🏀', x: 35, y: 90 },
+    { emoji: '🎾', x: 55, y: 92 },
+
+    // В углах и по бокам
+    { emoji: '🪴', x: 5, y: 75, size: 'large' },
+    { emoji: '🧺', x: 8, y: 85 },
+    { emoji: '🪴', x: 90, y: 75, size: 'large' },
+    { emoji: '🧸', x: 92, y: 88 },
+
+    // На подоконнике (у окна)
+    { emoji: '🌵', x: 47, y: 33 },
+    { emoji: '🕯️', x: 52, y: 33 },
+
+    // Возле сундука
+    { emoji: '📜', x: 78, y: 58 },
+    { emoji: '🔦', x: 85, y: 60 },
+    { emoji: '🧭', x: 72, y: 62 },
+
+    // На полу у стены
+    { emoji: '🎁', x: 18, y: 60 },
+    { emoji: '🧳', x: 82, y: 68, size: 'large' },
+  ];
+
+  // 7 ключей — спрятаны среди предметов
+  const keys = [
+    { doorIndex: 0, x: 25, y: 21 },
+    { doorIndex: 1, x: 62, y: 21 },
+    { doorIndex: 2, x: 43, y: 43 },
+    { doorIndex: 3, x: 48, y: 84 },
+    { doorIndex: 4, x: 80, y: 60 },
+    { doorIndex: 5, x: 10, y: 87 },
+    { doorIndex: 6, x: 49, y: 34 },
+  ];
+
+  let openedDoors = 0;
+  let currentKeyForDoor = null;
+  let doorStates = Array(7).fill(null).map(() => ({
+    keyInserted: false,
+    opened: false,
+    lockedUntil: 0
+  }));
+
+  // Создаём предметы в комнате
+  function buildRoom() {
+    const room = document.getElementById('room');
+
+    // Декоративные предметы
+    roomItems.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      if (item.size) div.classList.add(item.size);
+      div.textContent = item.emoji;
+      div.style.left = item.x + '%';
+      div.style.top = item.y + '%';
+      div.style.transform = 'translate(-50%, -50%)';
+      room.appendChild(div);
+    });
+
+    // Ключи
+    keys.forEach(key => {
+      const div = document.createElement('div');
+      div.className = 'item key';
+      div.textContent = '🔑';
+      div.style.left = key.x + '%';
+      div.style.top = key.y + '%';
+      div.style.transform = 'translate(-50%, -50%)';
+      div.dataset.doorIndex = key.doorIndex;
+      div.addEventListener('click', () => handleKeyClick(div, key.doorIndex));
+      room.appendChild(div);
+    });
+  }
+
+  // Создаём 7 дверей
+  function buildDoors() {
+    const area = document.getElementById('doorsArea');
+    for (let i = 0; i < 7; i++) {
+      const door = document.createElement('div');
+      door.className = 'door';
+      door.dataset.index = i;
+      door.innerHTML = `
+        <div class="door-number">${i + 1}</div>
+        <div class="lock">🔒</div>
+      `;
+      door.addEventListener('click', () => handleDoorClick(door, i));
+      area.appendChild(door);
+    }
+  }
+
+  // Обработка клика по ключу
+  function handleKeyClick(keyEl, doorIndex) {
+    if (keyEl.classList.contains('found')) return;
+    keyEl.classList.add('found');
+    currentKeyForDoor = doorIndex;
+
+    const doorEl = document.querySelectorAll('.door')[doorIndex];
+    const keyRect = keyEl.getBoundingClientRect();
+    const doorRect = doorEl.getBoundingClientRect();
+
+    const flyingKey = document.createElement('div');
+    flyingKey.textContent = '🔑';
+    flyingKey.style.cssText = `
+      position: fixed;
+      left: ${keyRect.left}px;
+      top: ${keyRect.top}px;
+      font-size: 2.5rem;
+      z-index: 50;
+      pointer-events: none;
+      transition: all 0.8s cubic-bezier(0.5, -0.3, 0.5, 1.3);
+    `;
+    document.body.appendChild(flyingKey);
+
+    requestAnimationFrame(() => {
+      flyingKey.style.left = (doorRect.left + doorRect.width / 2 - 15) + 'px';
+      flyingKey.style.top = (doorRect.top + doorRect.height / 2 - 15) + 'px';
+      flyingKey.style.fontSize = '1.5rem';
+      flyingKey.style.transform = 'rotate(720deg)';
+    });
+
+    setTimeout(() => {
+      flyingKey.remove();
+      doorStates[doorIndex].keyInserted = true;
+      doorEl.classList.add('key-inserted');
+      doorEl.querySelector('.lock').textContent = '🗝️';
+      playTone(800, 0.1, 'sine');
+      setTimeout(() => playTone(1200, 0.15, 'sine'), 100);
+    }, 800);
+  }
+
+  function handleDoorClick(doorEl, doorIndex) {
+    const state = doorStates[doorIndex];
+    if (state.opened) return;
+
+    if (Date.now() < state.lockedUntil) {
+      const secondsLeft = Math.ceil((state.lockedUntil - Date.now()) / 1000);
+      showTemporaryMessage(`Дверь отдыхает ещё ${secondsLeft} сек.`);
+      return;
+    }
+
+    if (!state.keyInserted) {
+      if (currentKeyForDoor === null) {
+        triggerDoorError(doorEl, doorIndex, "Сначала найди ключ!");
+      } else if (currentKeyForDoor !== doorIndex) {
+        triggerDoorError(doorEl, doorIndex, "Этот ключ не подходит! Поищи другой 🔑");
+      }
+      return;
+    }
+
+    openDoor(doorEl, doorIndex);
+  }
+
+  function triggerDoorError(doorEl, doorIndex, message) {
+    doorEl.classList.add('error');
+    setTimeout(() => doorEl.classList.remove('error'), 1000);
+    doorStates[doorIndex].lockedUntil = Date.now() + 10000;
+    playErrorSound();
+    showTemporaryMessage(message);
+  }
+
+  function showTemporaryMessage(text) {
+    const existing = document.querySelector('.temp-msg');
+    if (existing) existing.remove();
+    const msg = document.createElement('div');
+    msg.className = 'temp-msg';
+    msg.textContent = text;
+    msg.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff5252;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 20px;
+      font-weight: bold;
+      z-index: 200;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    `;
+    document.body.appendChild(msg);
+    setTimeout(() => {
+      msg.style.transition = 'opacity 0.5s';
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 500);
+    }, 2500);
+  }
+
+  function openDoor(doorEl, doorIndex) {
+    doorEl.classList.add('opened');
+    doorEl.classList.remove('key-inserted');
+    doorEl.innerHTML = `
+      <div class="light-rays"></div>
+      <div class="fact-preview">${facts[doorIndex].title}</div>
+    `;
+    openedDoors++;
+    document.getElementById('openedCount').textContent = openedDoors;
+    showFact(doorIndex);
+    playSuccessSound();
+    currentKeyForDoor = null;
+    
+    // Проверка победы — активируем зелёную кнопку
+    if (openedDoors === 7) {
+      const restartBtn = document.getElementById('restartBtn');
+      restartBtn.classList.remove('red');
+      restartBtn.classList.add('green');
+      
+      setTimeout(() => {
+        document.getElementById('finalModal').classList.add('active');
+      }, 2500);
+    }
+  }
+
+  function showFact(index) {
+    document.getElementById('factTitle').textContent = '✨ ' + facts[index].title + ' ✨';
+    document.getElementById('factText').textContent = facts[index].text;
+    document.getElementById('factModal').classList.add('active');
+  }
+
+  function closeFactModal() {
+    document.getElementById('factModal').classList.remove('active');
+  }
+
+  // Перезапуск игры
+  function restartGame() {
+    location.reload();
+  }
+
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, type = 'sine') {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function playErrorSound() {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch (e) {}
+  }
+
+  function playSuccessSound() {
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      setTimeout(() => playTone(freq, 0.2, 'triangle'), i * 100);
+    });
+  }
+
+  buildRoom();
+  buildDoors();
+</script>
+
+</body>
+</html>
